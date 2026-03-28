@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Cpu, Mail, Lock, User, ArrowRight, AlertCircle } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-export default function AuthPage() {
+export default function AuthPage({ onBack }) {
   const { login, register } = useAuth()
   const [mode, setMode] = useState('login') // login | register
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -118,9 +118,16 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-muted mt-6">
-          Your data stays local — no server accounts required
-        </p>
+        <div className="flex items-center justify-center gap-4 mt-6">
+          <button onClick={onBack} className="flex items-center gap-1.5 text-xs text-muted hover:text-white transition-colors">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+            Back to Home
+          </button>
+          <span className="text-border">·</span>
+          <p className="text-xs text-muted">Your data stays local</p>
+        </div>
       </div>
     </div>
   )

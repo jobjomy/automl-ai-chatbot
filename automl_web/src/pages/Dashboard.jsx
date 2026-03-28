@@ -1,12 +1,34 @@
 // src/pages/Dashboard.jsx
 import { useState, useEffect } from 'react'
 import { Cpu, Plus, Clock, CheckCircle, AlertCircle, Loader, Trash2,
-         LogOut, ChevronRight, BarChart3, FileText, X } from 'lucide-react'
+         LogOut, ChevronRight, BarChart3, FileText, X, Copy, Check } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { getSessions, deleteSession } from '../lib/history'
-import { downloadTxt, downloadPdf } from '../lib/download'
+import { downloadTxt, downloadPdf, downloadPy, downloadIpynb } from '../lib/download'
 import ChatBot from '../components/ChatBot'
 import ReactMarkdown from 'react-markdown'
+
+// ── CodeBlock with copy button ────────────────────────────────────
+function CodeBlock({ inline, className, children }) {
+  const [copied, setCopied] = useState(false)
+  const code = String(children).replace(/\n$/, '')
+  if (inline) return <code className="bg-surface border border-border/50 text-cyan px-1.5 py-0.5 rounded text-xs font-mono">{code}</code>
+  const copy = () => { navigator.clipboard.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }) }
+  return (
+    <div className="relative group my-3">
+      <div className="flex items-center justify-between px-4 py-2 bg-[#1a1a2e] rounded-t-xl border border-border border-b-0">
+        <span className="text-xs text-muted font-mono">{className?.replace('language-', '') || 'python'}</span>
+        <button onClick={copy} className="flex items-center gap-1.5 text-xs text-muted hover:text-white transition-colors">
+          {copied ? <><Check size={12} className="text-emerald-400" /><span className="text-emerald-400">Copied!</span></> : <><Copy size={12} /><span>Copy</span></>}
+        </button>
+      </div>
+      <pre className="bg-[#16161e] border border-border border-t-0 rounded-b-xl p-4 overflow-x-auto m-0">
+        <code className="text-[#a0dcff] text-xs font-mono leading-relaxed whitespace-pre">{code}</code>
+      </pre>
+    </div>
+  )
+}
+const MD_COMPONENTS = { code: CodeBlock }
 
 function StatusBadge({ status }) {
   const map = {
@@ -47,7 +69,7 @@ function SessionCard({ session, onDelete, onView, onOpenChat, onDownload }) {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {session.report && (
             <>
               <button onClick={() => onView(session)}
@@ -55,16 +77,23 @@ function SessionCard({ session, onDelete, onView, onOpenChat, onDownload }) {
                 className="w-7 h-7 rounded-lg border border-border hover:border-accent/40 flex items-center justify-center text-muted hover:text-white transition-all">
                 <FileText size={13} />
               </button>
-              <button onClick={() => onDownload(session, 'pdf')}
-                title="Download PDF"
+              <button onClick={() => onDownload(session, 'pdf')} title="Download PDF"
                 className="w-7 h-7 rounded-lg border border-border hover:border-red-400/40 flex items-center justify-center text-muted hover:text-red-400 transition-all">
                 <span className="text-[9px] font-bold">PDF</span>
               </button>
-              <button onClick={() => onDownload(session, 'txt')}
-                title="Download TXT"
+              <button onClick={() => onDownload(session, 'txt')} title="Download TXT"
                 className="w-7 h-7 rounded-lg border border-border hover:border-slate-400/40 flex items-center justify-center text-muted hover:text-slate-300 transition-all">
                 <span className="text-[9px] font-bold">TXT</span>
               </button>
+              <button onClick={() => onDownload(session, 'py')} title="Download Python"
+                className="w-7 h-7 rounded-lg border border-border hover:border-blue-400/40 flex items-center justify-center text-muted hover:text-blue-400 transition-all">
+                <span className="text-[9px] font-bold">.py</span>
+              </button>
+              <button onClick={() => onDownload(session, 'ipynb')} title="Download Notebook"
+                className="w-7 h-7 rounded-lg border border-border hover:border-orange-400/40 flex items-center justify-center text-muted hover:text-orange-400 transition-all">
+                <span className="text-[9px] font-bold">nb</span>
+              </button>
+
             </>
           )}
           <button onClick={() => onDelete(session.id)}
@@ -97,8 +126,10 @@ function ReportModal({ session, onClose }) {
     setDl(type)
     try {
       const ts = session.createdAt.slice(0,10)
-      if (type==='pdf') await downloadPdf(session.report, `automl_report_${ts}.pdf`)
-      if (type==='txt') downloadTxt(session.report, `automl_report_${ts}.txt`)
+      if (type==='pdf')   await downloadPdf(session.report, `automl_report_${ts}.pdf`)
+      if (type==='txt')   downloadTxt(session.report, `automl_report_${ts}.txt`)
+      if (type==='py')    downloadPy(session.report, `automl_pipeline_${ts}.py`)
+      if (type==='ipynb') downloadIpynb(session.report, session.report, `automl_pipeline_${ts}.ipynb`)
     } catch(e) { console.error(e) }
     setDl(null)
   }
@@ -135,10 +166,8 @@ function ReportModal({ session, onClose }) {
               prose-h2:text-accent-bright prose-h2:text-base prose-h2:font-semibold prose-h2:mt-6 prose-h2:mb-2
               prose-h3:text-cyan prose-h3:text-sm prose-h3:font-semibold prose-h3:mt-4
               prose-p:text-slate-300 prose-p:leading-relaxed prose-p:my-2
-              prose-li:text-slate-300 prose-strong:text-white
-              prose-code:text-cyan prose-code:bg-surface prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:font-mono
-              prose-pre:bg-[#16161e] prose-pre:border prose-pre:border-border prose-pre:rounded-xl prose-pre:p-4
-              prose-pre:text-[#a0dcff] prose-pre:text-xs prose-pre:font-mono prose-pre:leading-relaxed prose-pre:overflow-x-auto">
+              prose-li:text-slate-300 prose-strong:text-white"
+            components={MD_COMPONENTS}>
             {session.report}
           </ReactMarkdown>
         </div>
@@ -151,8 +180,9 @@ export default function Dashboard() {
   const { user, logout } = useAuth()
   const [sessions, setSessions]         = useState([])
   const [chatOpen, setChatOpen]         = useState(false)
-  const [activeSession, setActiveSession] = useState(null)  // session to open in chat
-  const [viewSession, setViewSession]   = useState(null)   // report-only modal
+  const [activeSession, setActiveSession] = useState(null)
+  const [viewSession, setViewSession]   = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)  // session id to confirm delete
   const [backendOk, setBackendOk]       = useState(null)
 
   const load = () => setSessions(getSessions(user.id))
@@ -164,14 +194,20 @@ export default function Dashboard() {
     })
   }, [])
 
-  const handleDelete = (id) => {
-    deleteSession(user.id, id); load()
+  const handleDelete = (id) => setConfirmDelete(id)
+
+  const confirmDeleteSession = () => {
+    deleteSession(user.id, confirmDelete)
+    load()
+    setConfirmDelete(null)
   }
 
   const handleDownload = async (session, type) => {
     const ts = session.createdAt.slice(0,10)
-    if (type==='pdf') await downloadPdf(session.report, `automl_report_${ts}.pdf`)
-    if (type==='txt') downloadTxt(session.report, `automl_report_${ts}.txt`)
+    if (type==='pdf')   await downloadPdf(session.report, `automl_report_${ts}.pdf`)
+    if (type==='txt')   downloadTxt(session.report, `automl_report_${ts}.txt`)
+    if (type==='py')    downloadPy(session.report, `automl_pipeline_${ts}.py`)
+    if (type==='ipynb') downloadIpynb(session.report, session.report, `automl_pipeline_${ts}.ipynb`)
   }
 
   const completedCount = sessions.filter(s => s.status==='done').length
@@ -340,6 +376,34 @@ export default function Dashboard() {
 
       {/* Report modal */}
       {viewSession && <ReportModal session={viewSession} onClose={() => setViewSession(null)} />}
+
+      {/* Delete confirmation dialog */}
+      {confirmDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setConfirmDelete(null)}>
+          <div className="absolute inset-0 bg-void/80 backdrop-blur-sm" />
+          <div className="relative bg-surface border border-border rounded-2xl p-6 w-full max-w-sm animate-fade-in shadow-2xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-red-500/15 border border-red-500/25 flex items-center justify-center flex-shrink-0">
+                <Trash2 size={16} className="text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-sm">Delete pipeline?</h3>
+                <p className="text-muted text-xs mt-0.5">This will permanently remove the chat and report.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2 rounded-xl border border-border text-subtle hover:text-white text-sm transition-all">
+                Cancel
+              </button>
+              <button onClick={confirmDeleteSession}
+                className="flex-1 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-400 font-medium text-sm transition-all">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

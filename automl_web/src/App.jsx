@@ -39,7 +39,7 @@ function InnerApp() {
   if (user) return <Dashboard />
 
   // Auth page
-  if (showAuth) return <AuthPage />
+  if (showAuth) return <AuthPage onBack={() => setShowAuth(false)} />
 
   // Landing page
   const openChat = () => {
