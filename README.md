@@ -74,5 +74,4 @@ http://localhost:5173
 - Job Jomy
 - Venkat Nivas Reddy K
 - Sherlyn Rose
-- Sahana Vittal Shetty
 - Sahana Shetty
